@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#d4a536" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GF Admin" />
+  <title>Gold Fortune – Admin</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-2.png" />
+  <link rel="apple-touch-icon" href="icon-1.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1a1408; --card: #241c0f; --border: #3d3220; --gold: #e8c547;
+      --text: #f0e6c8; --muted: #a08b5c; --danger: #e74c3c; --success: #27ae60;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "DM Sans", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+    h1,h2,h3 { font-family: "Playfair Display", serif; }
+    #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-box { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 36px 28px; text-align: center; }
+    .login-box h1 { color: var(--gold); font-size: 1.9rem; margin-bottom: 6px; }
+    .login-box p { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+    .form-group { text-align: left; margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; }
+    input {
+      width: 100%; height: 46px; background: #1a1408; border: 1px solid var(--border);
+      border-radius: 8px; padding: 0 14px; color: var(--text); font-size: 0.95rem; outline: none;
+    }
+    input:focus { border-color: var(--gold); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 20px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+    .btn-gold { background: var(--gold); color: #1a1408; width: 100%; }
+    .btn-gold:hover { background: #f0d060; }
+    .btn-gold:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-sm { height: 36px; padding: 0 14px; font-size: 0.85rem; width: auto; }
+    .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 12px; display: none; }
+    #dashboard { display: none; min-height: 100vh; padding-bottom: 40px; }
+    .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .topbar h1 { font-size: 1.35rem; color: var(--gold); }
+    .topbar-actions { display: flex; align-items: center; gap: 12px; }
+    .idle-timer { font-size: 0.8rem; color: var(--muted); background: #1a1408; padding: 4px 10px; border-radius: 20px; }
+    .container { max-width: 920px; margin: 0 auto; padding: 24px 16px; }
+    .section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin-bottom: 20px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+    .section-header h2 { font-size: 1.15rem; color: var(--gold); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+    .status { font-size: 0.85rem; padding: 8px 12px; border-radius: 6px; margin-top: 12px; display: none; }
+    .status.success { background: rgba(39,174,96,0.15); color: var(--success); display: block; }
+    .status.error { background: rgba(231,76,60,0.15); color: var(--danger); display: block; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--gold); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
+    .empty { text-align: center; color: var(--muted); padding: 28px; }
+    .toast { position: fixed; top: 20px; right: 20px; background: var(--card); border: 1px solid var(--gold); color: var(--text); padding: 12px 18px; border-radius: 8px; z-index: 999; transform: translateY(-100px); opacity: 0; transition: all 0.3s; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .install-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); padding: 16px 18px; display: none; z-index: 300; box-shadow: 0 -8px 30px rgba(0,0,0,0.45); }
+    .install-banner.show { display: block; }
+    .install-inner { max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+    .install-icon { width: 48px; height: 48px; background: var(--gold); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; color: #1a1408; }
+    .install-text { flex: 1; }
+    .install-text strong { display: block; font-size: 1rem; margin-bottom: 2px; }
+    .install-text span { font-size: 0.82rem; color: var(--muted); }
+    .install-actions { display: flex; flex-direction: column; gap: 6px; }
+    .ios-instructions { display: none; margin-top: 12px; padding: 12px 14px; background: #1a1408; border-radius: 10px; font-size: 0.85rem; color: var(--muted); }
+    .ios-instructions.show { display: block; }
+    .ios-instructions ol { margin: 8px 0 0 18px; }
+    .ios-instructions .share-icon { display: inline-block; background: var(--gold); color: #1a1408; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 0.8rem; }
+    .product-card { background: #1a1408; border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+    .product-card strong { color: var(--gold); }
+  .control-card{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px;border:1px solid var(--border);background:#1a1408;border-radius:12px;margin:10px 0}.control-card strong{display:block;color:var(--gold)}.control-card span{display:block;color:var(--muted);font-size:.78rem;margin-top:3px}@media(max-width:600px){.control-card{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+
+  <div id="loginScreen">
+    <div class="login-box">
+      <h1>Gold Fortune</h1>
+      <p>Admin Panel</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="username" placeholder="Username" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-gold" id="loginBtn">Sign In</button>
+        <div class="error-msg" id="loginError">Invalid username or password</div>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <div class="topbar">
+      <h1>Gold Fortune Admin</h1>
+      <div class="topbar-actions">
+        <span class="idle-timer" id="idleTimer">Idle: 2:00</span>
+        <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="section">
+        <div class="section-header"><h2>⚙️ Payment & Contact Controls</h2><button class="btn btn-outline btn-sm" onclick="fetchBin().then(fillForm)">Refresh</button></div>
+        <div class="control-card"><div><strong>Edit Payment Account</strong><span>Bank name, account name and account number used for deposits.</span></div><button class="btn btn-gold btn-sm" onclick="savePaymentAccount()">Save Payment Account</button></div>
+        <div class="grid-2"><div class="form-group"><label>Bank Name</label><input type="text" id="bankName" placeholder="Payment bank name" /></div><div class="form-group"><label>Account Name</label><input type="text" id="accountName" placeholder="Account holder" /></div></div>
+        <div class="form-group"><label>Bank Account Number</label><input type="text" id="bankAccount" placeholder="Account number" /></div>
+        <div class="control-card"><div><strong>Edit Telegram Link</strong><span>Direct Telegram support destination.</span></div><button class="btn btn-gold btn-sm" onclick="saveContact('telegram')">Save Telegram</button></div><div class="form-group"><input type="text" id="telegram" placeholder="https://t.me/..." /></div>
+        <div class="control-card"><div><strong>Edit Telegram Channel Link</strong><span>Public Telegram channel destination.</span></div><button class="btn btn-gold btn-sm" onclick="saveContact('telegramChannel')">Save Channel</button></div><div class="form-group"><input type="text" id="telegramChannel" placeholder="https://t.me/..." /></div>
+        <div class="control-card"><div><strong>Edit WhatsApp Link</strong><span>WhatsApp support destination.</span></div><button class="btn btn-gold btn-sm" onclick="saveContact('whatsapp')">Save WhatsApp</button></div><div class="form-group"><input type="text" id="whatsapp" placeholder="https://wa.me/..." /></div>
+        <div class="status" id="settingsStatus"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <h2>📦 Investment Packages</h2>
+          <button class="btn btn-outline btn-sm" onclick="fetchBin().then(fillForm)">Refresh</button>
+        </div>
+        <div id="productsList"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <h2>👥 Users</h2>
+          <button class="btn btn-outline btn-sm" onclick="fetchBin().then(fillForm)">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Balance</th><th>Joined</th></tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="4" class="empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <h2>💸 Withdrawal Requests</h2>
+          <button class="btn btn-outline btn-sm" onclick="fetchBin().then(fillForm)">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+            </thead>
+            <tbody id="withdrawalsBody">
+              <tr><td colspan="4" class="empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="install-banner" id="installBanner">
+    <div class="install-inner">
+      <div class="install-icon">↓</div>
+      <div class="install-text">
+        <strong>Install Admin App</strong>
+        <span id="installHint">Add to home screen for quick access</span>
+      </div>
+      <div class="install-actions">
+        <button class="btn btn-gold btn-sm" id="installBtn">Install</button>
+        <button class="btn btn-outline btn-sm" onclick="hideInstallBanner()">Later</button>
+      </div>
+    </div>
+    <div class="ios-instructions" id="iosInstructions">
+      <strong style="color:var(--gold)">How to install on iPhone:</strong>
+      <ol>
+        <li>Tap the <span class="share-icon">Share</span> button in Safari</li>
+        <li>Tap <strong>Add to Home Screen</strong></li>
+        <li>Tap <strong>Add</strong></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
