@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f0c06" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Gold Fortune" />
+  <title>Gold Fortune – Dashboard</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-2.png" />
+  <link rel="apple-touch-icon" href="icon-1.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0c06; --card: #1c1610; --card2: #241c0f; --border: #3a3020;
+      --gold: #e8c547; --text: #f5eedc; --muted: #9a8658;
+      --success: #2ecc71; --danger: #e74c3c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: "DM Sans", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 24px; }
+    h1,h2,h3 { font-family: "Playfair Display", serif; }
+    .app { max-width: 480px; margin: 0 auto; padding: 16px 16px 32px; }
+    .loading { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 200; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; padding-top: 8px; }
+    .greet-label { font-size: 0.9rem; color: var(--muted); }
+    .greet-name { font-size: 1.55rem; color: var(--gold); font-weight: 700; margin-top: 2px; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--gold); color: #1a1408; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
+    .balance-card { background: linear-gradient(160deg, #2a2214 0%, #1a140c 100%); border: 1px solid rgba(232,197,71,0.35); border-radius: 18px; padding: 22px 20px; margin-bottom: 14px; position: relative; overflow: hidden; }
+    .balance-card::after { content: ""; position: absolute; top: -30%; right: -20%; width: 60%; height: 80%; background: radial-gradient(circle, rgba(232,197,71,0.12) 0%, transparent 70%); pointer-events: none; }
+    .bal-label { font-size: 0.9rem; color: var(--muted); margin-bottom: 4px; }
+    .bal-amount { font-size: 2rem; font-weight: 700; color: var(--gold); font-family: "Playfair Display", serif; }
+    .bal-sub { font-size: 0.85rem; color: var(--muted); margin: 4px 0 18px; }
+    .bal-actions { display: flex; gap: 10px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 18px; border-radius: 12px; font-size: 0.92rem; font-weight: 600; border: none; cursor: pointer; }
+    .btn:active { opacity: 0.85; }
+    .btn-gold { background: var(--gold); color: #1a1408; flex: 1; }
+    .btn-dark { background: #12100a; color: var(--gold); border: 1px solid var(--border); flex: 1; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 1.35rem; font-weight: 700; color: var(--gold); font-family: "Playfair Display", serif; }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    .quick-nav { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 28px; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; color: var(--text); cursor: pointer; font-family: inherit; font-size: 0.72rem; font-weight: 500; }
+    .nav-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--gold); }
+    .nav-item:active .nav-icon { border-color: var(--gold); background: rgba(232,197,71,0.1); }
+    .section-title { font-size: 1.25rem; color: var(--text); margin-bottom: 14px; font-family: "Playfair Display", serif; }
+    .carousel { position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 28px; aspect-ratio: 16/9; background: var(--card); }
+    .carousel-track { display: flex; width: 300%; height: 100%; transition: transform 0.45s ease; }
+    .carousel-slide { width: 33.333%; height: 100%; flex-shrink: 0; }
+    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .carousel-dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+    .carousel-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; }
+    .carousel-dots span.active { background: var(--gold); width: 18px; border-radius: 4px; }
+    .tx-list { display: flex; flex-direction: column; gap: 10px; }
+    .tx-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .tx-title { font-weight: 600; font-size: 0.95rem; }
+    .tx-date { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+    .tx-amount { font-weight: 700; font-size: 0.95rem; }
+    .tx-amount.plus { color: var(--success); }
+    .tx-amount.minus { color: var(--danger); }
+    .empty { text-align: center; color: var(--muted); padding: 24px; font-size: 0.9rem; }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .back-btn { width: 40px; height: 40px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); color: var(--gold); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .page-header h2 { font-size: 1.3rem; color: var(--gold); }
+    .product-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 12px; }
+    .product-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .product-name { font-size: 1.15rem; color: var(--gold); font-weight: 700; }
+    .product-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 12px; }
+    .product-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 0.9rem; margin-bottom: 14px; }
+    .product-meta span { color: var(--muted); }
+    .product-meta strong { color: var(--text); }
+    .link-card { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 10px; text-decoration: none; color: var(--text); }
+    .link-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(232,197,71,0.12); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .link-card strong { display: block; font-size: 0.95rem; }
+    .link-card span { font-size: 0.8rem; color: var(--muted); }
+    .invite-box { background: var(--card); border: 1px dashed var(--border); border-radius: 16px; padding: 22px; text-align: center; margin-bottom: 16px; }
+    .invite-code { font-size: 1.5rem; font-weight: 700; color: var(--gold); letter-spacing: 1px; margin: 10px 0 16px; font-family: "Playfair Display", serif; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: var(--muted); }
+    .info-value { font-weight: 600; text-align: right; max-width: 60%; word-break: break-all; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: flex-end; justify-content: center; z-index: 300; padding: 16px; }
+    .modal-bg.show { display: flex; }
+    .modal { background: var(--card2); border: 1px solid var(--border); border-radius: 20px 20px 16px 16px; padding: 24px; width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto; }
+    .modal h3 { color: var(--gold); margin-bottom: 8px; font-size: 1.2rem; }
+    .modal p { font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; }
+    .modal label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    .modal input,.modal select { width: 100%; height: 46px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; color: var(--text); font-size: 0.95rem; outline: none; margin-bottom: 14px; }
+    .modal input:focus,.modal select:focus { border-color: var(--gold); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .modal-actions .btn { flex: 1; }
+    .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--card2); border: 1px solid var(--gold); color: var(--text); padding: 12px 18px; border-radius: 12px; z-index: 400; opacity: 0; transition: all 0.3s; font-size: 0.9rem; max-width: 90%; text-align: center; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  
+    .nav-icon svg{width:29px;height:29px;fill:none;stroke:var(--gold);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.nav-item{font-size:.78rem;text-decoration:none}.nav-icon{width:62px;height:62px;border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.18)}.community{margin-top:26px}.community-card{background:linear-gradient(145deg,#211a0f,#151109);border:1px solid var(--border);border-radius:16px;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.community-left{display:flex;align-items:center;gap:11px}.community-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(145deg,#fff09b,#e8c547);color:#1b1408;display:grid;place-items:center;font-weight:800}.community-small{font-size:.72rem;color:var(--muted)}.community-name{font-weight:700;font-size:.88rem}.community-action{font-size:.76rem;color:#bfae84;text-align:right}.demo-badge{font-size:.62rem;color:#d8bd6a;border:1px solid rgba(232,197,71,.25);padding:3px 6px;border-radius:999px;margin-left:6px}</style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div><div style="color:var(--muted);font-size:0.9rem;">Loading...</div></div>
+  <div id="liveSyncBadge" title="This dashboard automatically checks for administrator updates" style="position:fixed;right:12px;top:12px;z-index:120;display:none;padding:6px 10px;border:1px solid rgba(232,197,71,.25);border-radius:999px;background:rgba(28,22,16,.86);color:#9a8658;font-size:.68rem;backdrop-filter:blur(10px);">● Live</div>
+  <div class="app" id="app" style="display:none;">
+
+    <div class="page active" id="page-home">
+      <div class="header">
+        <div>
+          <div class="greet-label" id="greetLabel">Good day,</div>
+          <div class="greet-name" id="greetName">User</div>
+        </div>
+        <div class="avatar" id="avatar">U</div>
+      </div>
+      <div class="balance-card">
+        <div class="bal-label">Total Balance</div>
+        <div class="bal-amount" id="balanceAmount">₦0.00</div>
+        <div class="bal-sub">Gold Fortune Wallet</div>
+        <div class="bal-actions">
+          <button class="btn btn-gold" onclick="openWithdraw()">↓ Withdraw</button>
+          <button class="btn btn-dark" onclick="openAddBank()">🏦 Add Bank</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-val" id="totalReferrals">0</div><div class="stat-label">Total Referrals</div></div>
+        <div class="stat-card"><div class="stat-val" id="totalEarned">₦0</div><div class="stat-label">Total Earned</div></div>
+      </div>
+      <div class="quick-nav">
+        <a class="nav-item" href="product.html"><div class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l1 13H5L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M9 12c0 2 6 2 6 0"/></svg></div>Product</a>
+        <a class="nav-item" href="support.html"><div class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14v3a2 2 0 0 0 2 2h1v-7H6a2 2 0 0 0-2 2Z"/><path d="M20 14v3a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2Z"/></svg></div>Support</a>
+        <a class="nav-item" href="platform.html"><div class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></div>Platform</a>
+        <a class="nav-item" href="invite.html"><div class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2"/><path d="M16 5.5a3 3 0 0 1 0 5.8"/><path d="M18 14a5 5 0 0 1 3 4.5V20"/></svg></div>Invite</a>
+        <a class="nav-item" href="profile.html"><div class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-2.5a7 7 0 0 1 14 0V21"/></svg></div>Profile</a>
+      </div>
+      <h2 class="section-title">Explore</h2>
+      <div class="carousel">
+        <div class="carousel-track" id="carouselTrack">
+          <div class="carousel-slide"><img src="assets/carousel-1.jpg" alt="Welcome" /></div>
+          <div class="carousel-slide"><img src="assets/carousel-2.jpg" alt="Boost" /></div>
+          <div class="carousel-slide"><img src="assets/carousel-3.jpg" alt="Withdraw" /></div>
+        </div>
+        <div class="carousel-dots" id="carouselDots">
+          <span class="active" onclick="goSlide(0)"></span>
+          <span onclick="goSlide(1)"></span>
+          <span onclick="goSlide(2)"></span>
+        </div>
+      </div>
+      <section class="community"><h2 class="section-title">Recent Activity </h2><div id="communityActivity" class="community-card"><div class="community-left"><div id="communityAvatar" class="community-avatar">A</div><div><div id="communityName" class="community-name">Amina Yusuf</div><div id="communityType" class="community-small">Referral activity</div></div></div><div id="communityAmount" class="community-action">+₦2,000</div></div></section>
+
+      <h2 class="section-title">Recent Transactions</h2>
+      <div class="tx-list" id="txList"><div class="empty">No transactions yet</div></div>
+    </div>
+
+    <div class="page" id="page-product">
+      <div class="page-header"><button class="back-btn" onclick="showPage('home')">‹</button><h2>Products</h2></div>
+      <div id="productsList"><div class="empty">Loading...</div></div>
+    </div>
+
+    <div class="page" id="page-support">
+      <div class="page-header"><button class="back-btn" onclick="showPage('home')">‹</button><h2>Support</h2></div>
+      <div id="supportLinks"><div class="empty">Loading...</div></div>
+    </div>
+
+    <div class="page" id="page-platform">
+      <div class="page-header"><button class="back-btn" onclick="showPage('home')">‹</button><h2>Platform</h2></div>
+      <div class="product-card">
+        <div class="product-name">About Gold Fortune</div>
+        <div class="product-desc" style="margin-top:10px;">Secure investment platform. Choose a package, fund your wallet, earn, and withdraw to your bank.</div>
+      </div>
+      <div class="product-card">
+        <div class="info-row"><span class="info-label">Payment Bank</span><span class="info-value" id="platBank">—</span></div>
+        <div class="info-row"><span class="info-label">Account Name</span><span class="info-value" id="platName">—</span></div>
+        <div class="info-row"><span class="info-label">Account Number</span><span class="info-value" id="platAcct">—</span></div>
+      </div>
+      <button class="btn btn-gold" style="width:100%;" onclick="openDeposit()">Make a Deposit</button>
+    </div>
+
+    <div class="page" id="page-invite">
+      <div class="page-header"><button class="back-btn" onclick="showPage('home')">‹</button><h2>Invite & Earn</h2></div>
+      <div class="invite-box">
+        <div style="color:var(--muted);font-size:0.9rem;">Your referral code</div>
+        <div class="invite-code" id="inviteCode">—</div>
+        <button class="btn btn-gold" style="width:100%;" onclick="copyCode()">Copy Code</button>
+      </div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-val" id="inviteRefs">0</div><div class="stat-label">Total Invites</div></div>
+        <div class="stat-card"><div class="stat-val" id="inviteEarn">₦0</div><div class="stat-label">Invite Earnings</div></div>
+      </div>
+      <div class="product-card"><div class="product-desc">Share your code. When friends join and invest, you earn from your network.</div></div>
+    </div>
+
+    <div class="page" id="page-profile">
+      <div class="page-header"><button class="back-btn" onclick="showPage('home')">‹</button><h2>Profile</h2></div>
+      <div class="product-card">
+        <div class="info-row"><span class="info-label">Full Name</span><span class="info-value" id="profName">—</span></div>
+        <div class="info-row"><span class="info-label">Email</span><span class="info-value" id="profEmail">—</span></div>
+        <div class="info-row"><span class="info-label">Joined</span><span class="info-value" id="profJoined">—</span></div>
+        <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="profStatus" style="color:var(--success)">Active</span></div>
+        <div class="info-row"><span class="info-label">Referral Code</span><span class="info-value" id="profCode">—</span></div>
+      </div>
+      <div class="product-card">
+        <div class="section-title" style="font-size:1rem;margin-bottom:10px;">Bank Details</div>
+        <div class="info-row"><span class="info-label">Your Bank</span><span class="info-value" id="profBank">Not set</span></div>
+        <div class="info-row"><span class="info-label">Account No.</span><span class="info-value" id="profAcct">Not set</span></div>
+        <button class="btn btn-dark" style="width:100%;margin-top:12px;" onclick="openAddBank()">Update Bank</button>
+      </div>
+      <button class="btn btn-dark" style="width:100%;margin-top:8px;color:var(--danger);border-color:rgba(231,76,60,0.4);" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="withdrawModal">
+    <div class="modal">
+      <h3>Request Withdrawal</h3>
+      <p>Enter amount and bank details.</p>
+      <label>Amount (₦)</label>
+      <input type="number" id="wdAmount" placeholder="Minimum ₦1,000" min="1000" />
+      <label>Bank / Account details</label>
+      <input type="text" id="wdAccount" placeholder="Bank name + account number" />
+      <div class="modal-actions">
+        <button class="btn btn-dark" onclick="closeModals()">Cancel</button>
+        <button class="btn btn-gold" onclick="submitWithdraw()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="depositModal">
+    <div class="modal">
+      <h3>Make a Deposit</h3>
+      <p>Transfer to this account, then contact support with your receipt.</p>
+      <div id="depositDetails"></div>
+      <div class="modal-actions">
+        <button class="btn btn-dark" onclick="closeModals()">Close</button>
+        <button class="btn btn-gold" id="contactSupportBtn">Contact Support</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="bankModal">
+    <div class="modal">
+      <h3>Add Bank Account</h3>
+      <p>Save your bank for withdrawals.</p>
+      <label>Bank Name</label>
+      <select id="userBankName"><option value="">Select bank</option><option value="AACB MFB">AACB MFB</option><option value="AB MFB">AB MFB</option><option value="ABC MFB">ABC MFB</option><option value="Abestone MFB">Abestone MFB</option><option value="Abia SME MFB">Abia SME MFB</option><option value="Abia State University MFB">Abia State University MFB</option><option value="Abigi MFB">Abigi MFB</option><option value="Above Only MFB">Above Only MFB</option><option value="Abubakar Tafawa Balewa University MFB">Abubakar Tafawa Balewa University MFB</option><option value="Abucoop MFB">Abucoop MFB</option><option value="Abulesoro MFB">Abulesoro MFB</option><option value="Access Bank Plc">Access Bank Plc</option><option value="Accion Microfinance Bank">Accion Microfinance Bank</option><option value="Ace MFB">Ace MFB</option><option value="Achina MFB">Achina MFB</option><option value="Active Point MFB">Active Point MFB</option><option value="Ada MFB">Ada MFB</option><option value="Adazi-Enu MFB">Adazi-Enu MFB</option><option value="Adazi-Nnukwu MFB">Adazi-Nnukwu MFB</option><option value="Addossar MFB">Addossar MFB</option><option value="Adeyemi College Staff MFB">Adeyemi College Staff MFB</option><option value="Afekhafe MFB">Afekhafe MFB</option><option value="Afemai MFB">Afemai MFB</option><option value="Agosasa MFB">Agosasa MFB</option><option value="Aguleri MFB">Aguleri MFB</option><option value="Ahmadu Bello University MFB">Ahmadu Bello University MFB</option><option value="Aibio MFB">Aibio MFB</option><option value="Aiyepe MFB">Aiyepe MFB</option><option value="Ajewole MFB">Ajewole MFB</option><option value="Ajikobi MFB">Ajikobi MFB</option><option value="Ajose MFB">Ajose MFB</option><option value="Ajuta MFB">Ajuta MFB</option><option value="Akalabo MFB">Akalabo MFB</option><option value="Akokwa MFB">Akokwa MFB</option><option value="Akpo MFB">Akpo MFB</option><option value="Aku Diewa MFB">Aku Diewa MFB</option><option value="Akuchukwu MFB">Akuchukwu MFB</option><option value="Akwengwu MFB">Akwengwu MFB</option><option value="Al-Barakah MFB">Al-Barakah MFB</option><option value="Al-Hayat MFB">Al-Hayat MFB</option><option value="Albasu MFB">Albasu MFB</option><option value="Alekum MFB">Alekum MFB</option><option value="Algreb MFB">Algreb MFB</option><option value="Aliero MFB">Aliero MFB</option><option value="Alkaleri MFB">Alkaleri MFB</option><option value="All Workers MFB">All Workers MFB</option><option value="Ally MFB">Ally MFB</option><option value="Alor MFB">Alor MFB</option><option value="Alpha Kapital MFB">Alpha Kapital MFB</option><option value="Alpha Morgan Bank">Alpha Morgan Bank</option><option value="Alternative Bank Limited">Alternative Bank Limited</option><option value="Alvana MFB">Alvana MFB</option><option value="Amac MFB">Amac MFB</option><option value="Amazu MFB">Amazu MFB</option><option value="Amba MFB">Amba MFB</option><option value="Amegy MFB">Amegy MFB</option><option value="Amju Unique MFB">Amju Unique MFB</option><option value="AMML MFB">AMML MFB</option><option value="Amoye MFB">Amoye MFB</option><option value="Ampersand MFB">Ampersand MFB</option><option value="Amucha MFB">Amucha MFB</option><option value="Anchorage MFB">Anchorage MFB</option><option value="Aniocha MFB">Aniocha MFB</option><option value="Annointed MFB">Annointed MFB</option><option value="Anya MFB">Anya MFB</option><option value="Aogo MFB">Aogo MFB</option><option value="Apa MFB">Apa MFB</option><option value="Apeks MFB">Apeks MFB</option><option value="Apex Trust MFB">Apex Trust MFB</option><option value="Apple MFB">Apple MFB</option><option value="Aramoko MFB">Aramoko MFB</option><option value="Aris MFB">Aris MFB</option><option value="Arise MFB">Arise MFB</option><option value="Asha MFB">Asha MFB</option><option value="Aspire MFB">Aspire MFB</option><option value="Asset Matrix MFB">Asset Matrix MFB</option><option value="Assets MFB">Assets MFB</option><option value="Astra Polaris MFB">Astra Polaris MFB</option><option value="Atlas MFB">Atlas MFB</option><option value="Auchi MFB">Auchi MFB</option><option value="Avuenegbe MFB">Avuenegbe MFB</option><option value="Awe MFB">Awe MFB</option><option value="Awgbu MFB">Awgbu MFB</option><option value="Awka MFB">Awka MFB</option><option value="Awka-Etiti MFB">Awka-Etiti MFB</option><option value="Awkuzu MFB">Awkuzu MFB</option><option value="Azsa MFB">Azsa MFB</option><option value="Babba MFB">Babba MFB</option><option value="Babcock MFB">Babcock MFB</option><option value="Babura MFB">Babura MFB</option><option value="Baines Credit MFB">Baines Credit MFB</option><option value="Balera MFB">Balera MFB</option><option value="Balogun Fulani MFB">Balogun Fulani MFB</option><option value="Balogun Gambari MFB">Balogun Gambari MFB</option><option value="Bam MFB">Bam MFB</option><option value="Bama MFB">Bama MFB</option><option value="Bancorp MFB">Bancorp MFB</option><option value="Banex MFB">Banex MFB</option><option value="Baobab MFB">Baobab MFB</option><option value="Baobab Microfinance Bank">Baobab Microfinance Bank</option><option value="Barnawa MFB">Barnawa MFB</option><option value="Bauchi CFA MFB">Bauchi CFA MFB</option><option value="Bauchi Investment Corporation MFB">Bauchi Investment Corporation MFB</option><option value="Bawyi MFB">Bawyi MFB</option><option value="Bayajidda MFB">Bayajidda MFB</option><option value="Bayero University MFB">Bayero University MFB</option><option value="Bayetin MFB">Bayetin MFB</option><option value="BCKash MFB">BCKash MFB</option><option value="Bejin-Doko MFB">Bejin-Doko MFB</option><option value="Benue MFB">Benue MFB</option><option value="Benysta MFB">Benysta MFB</option><option value="Berachah MFB">Berachah MFB</option><option value="Best Star MFB">Best Star MFB</option><option value="Bestway MFB">Bestway MFB</option><option value="Bethel MFB">Bethel MFB</option><option value="Better Life MFB">Better Life MFB</option><option value="BFL MFB">BFL MFB</option><option value="Bibajinre MFB">Bibajinre MFB</option><option value="Bichi MFB">Bichi MFB</option><option value="Bida Polytechnic MFB">Bida Polytechnic MFB</option><option value="BIPC MFB">BIPC MFB</option><option value="Bishopgate MFB">Bishopgate MFB</option><option value="Biyama MFB">Biyama MFB</option><option value="Blucon MFB">Blucon MFB</option><option value="Blue Ridge MFB">Blue Ridge MFB</option><option value="Blueprint Investments MFB">Blueprint Investments MFB</option><option value="Bluewhales MFB">Bluewhales MFB</option><option value="Bmazazahin MFB">Bmazazahin MFB</option><option value="BOCTrust MFB">BOCTrust MFB</option><option value="BOI MFB">BOI MFB</option><option value="Boji Boji MFB">Boji Boji MFB</option><option value="Bokkos MFB">Bokkos MFB</option><option value="Boluwaduro MFB">Boluwaduro MFB</option><option value="Bompai MFB">Bompai MFB</option><option value="Bonghe MFB">Bonghe MFB</option><option value="Borgu MFB">Borgu MFB</option><option value="Borno Renaissance MFB">Borno Renaissance MFB</option><option value="Boromu MFB">Boromu MFB</option><option value="Borstal MFB">Borstal MFB</option><option value="Bosak MFB">Bosak MFB</option><option value="Bowen MFB">Bowen MFB</option><option value="Bowman MFB">Bowman MFB</option><option value="Brass MFB">Brass MFB</option><option value="Brethren MFB">Brethren MFB</option><option value="Bridgehouse MFB">Bridgehouse MFB</option><option value="Bridgeway MFB">Bridgeway MFB</option><option value="Brightway MFB">Brightway MFB</option><option value="Briyth-Covenant MFB">Briyth-Covenant MFB</option><option value="Broadview MFB">Broadview MFB</option><option value="Brooks MFB">Brooks MFB</option><option value="Bubayero MFB">Bubayero MFB</option><option value="Bundi MFB">Bundi MFB</option><option value="Bungudu MFB">Bungudu MFB</option><option value="Bunkasa MFB">Bunkasa MFB</option><option value="Bunkure MFB">Bunkure MFB</option><option value="Business Support MFB">Business Support MFB</option><option value="Busu MFB">Busu MFB</option><option value="Calabar MFB">Calabar MFB</option><option value="Canaan MFB">Canaan MFB</option><option value="Capitalmetriq Swift MFB">Capitalmetriq Swift MFB</option><option value="Capstone MFB">Capstone MFB</option><option value="Carbon Microfinance Bank">Carbon Microfinance Bank</option><option value="Caretaker MFB">Caretaker MFB</option><option value="Cash Rite MFB">Cash Rite MFB</option><option value="Cashconnect MFB">Cashconnect MFB</option><option value="Citibank Nigeria Limited">Citibank Nigeria Limited</option><option value="Coronation Merchant Bank">Coronation Merchant Bank</option><option value="Ecobank Nigeria Plc">Ecobank Nigeria Plc</option><option value="FairMoney Microfinance Bank">FairMoney Microfinance Bank</option><option value="FCMB Bank Plc">FCMB Bank Plc</option><option value="Fidelity Bank Plc">Fidelity Bank Plc</option><option value="First Bank of Nigeria Limited">First Bank of Nigeria Limited</option><option value="First City Monument Bank Plc">First City Monument Bank Plc</option><option value="FSDH Merchant Bank">FSDH Merchant Bank</option><option value="Globus Bank Limited">Globus Bank Limited</option><option value="Guaranty Trust Bank Plc">Guaranty Trust Bank Plc</option><option value="Jaiz Bank Plc">Jaiz Bank Plc</option><option value="Keystone Bank Limited">Keystone Bank Limited</option><option value="Kuda Microfinance Bank">Kuda Microfinance Bank</option><option value="Lotus Bank Limited">Lotus Bank Limited</option><option value="Mainstreet Microfinance Bank">Mainstreet Microfinance Bank</option><option value="Moniepoint Microfinance Bank">Moniepoint Microfinance Bank</option><option value="Nova Commercial Bank Limited">Nova Commercial Bank Limited</option><option value="OPay Microfinance Bank">OPay Microfinance Bank</option><option value="Optimus Bank Limited">Optimus Bank Limited</option><option value="Parallex Bank Limited">Parallex Bank Limited</option><option value="Polaris Bank Limited">Polaris Bank Limited</option><option value="PremiumTrust Bank Limited">PremiumTrust Bank Limited</option><option value="Providus Bank Limited">Providus Bank Limited</option><option value="Rubies Microfinance Bank">Rubies Microfinance Bank</option><option value="Signature Bank Limited">Signature Bank Limited</option><option value="Sparkle Microfinance Bank">Sparkle Microfinance Bank</option><option value="Stanbic IBTC Bank Plc">Stanbic IBTC Bank Plc</option><option value="Standard Chartered Bank Nigeria Limited">Standard Chartered Bank Nigeria Limited</option><option value="Sterling Bank Plc">Sterling Bank Plc</option><option value="SunTrust Bank Nigeria Limited">SunTrust Bank Nigeria Limited</option><option value="TAJBank Limited">TAJBank Limited</option><option value="Tatum Bank Limited">Tatum Bank Limited</option><option value="Titan Trust Bank Limited">Titan Trust Bank Limited</option><option value="Union Bank of Nigeria Plc">Union Bank of Nigeria Plc</option><option value="United Bank for Africa Plc">United Bank for Africa Plc</option><option value="Unity Bank Plc">Unity Bank Plc</option><option value="VFD Microfinance Bank">VFD Microfinance Bank</option><option value="Wema Bank Plc">Wema Bank Plc</option><option value="Zenith Bank Plc">Zenith Bank Plc</option><option value="Other Nigerian financial institution — verify license #206">Other Nigerian financial institution — verify license #206</option><option value="Other Nigerian financial institution — verify license #207">Other Nigerian financial institution — verify license #207</option><option value="Other Nigerian financial institution — verify license #208">Other Nigerian financial institution — verify license #208</option><option value="Other Nigerian financial institution — verify license #209">Other Nigerian financial institution — verify license #209</option><option value="Other Nigerian financial institution — verify license #210">Other Nigerian financial institution — verify license #210</option><option value="Other Nigerian financial institution — verify license #211">Other Nigerian financial institution — verify license #211</option><option value="Other Nigerian financial institution — verify license #212">Other Nigerian financial institution — verify license #212</option><option value="Other Nigerian financial institution — verify license #213">Other Nigerian financial institution — verify license #213</option><option value="Other Nigerian financial institution — verify license #214">Other Nigerian financial institution — verify license #214</option><option value="Other Nigerian financial institution — verify license #215">Other Nigerian financial institution — verify license #215</option><option value="Other Nigerian financial institution — verify license #216">Other Nigerian financial institution — verify license #216</option><option value="Other Nigerian financial institution — verify license #217">Other Nigerian financial institution — verify license #217</option><option value="Other Nigerian financial institution — verify license #218">Other Nigerian financial institution — verify license #218</option><option value="Other Nigerian financial institution — verify license #219">Other Nigerian financial institution — verify license #219</option><option value="Other Nigerian financial institution — verify license #220">Other Nigerian financial institution — verify license #220</option><option value="Other Nigerian financial institution — verify license #221">Other Nigerian financial institution — verify license #221</option><option value="Other Nigerian financial institution — verify license #222">Other Nigerian financial institution — verify license #222</option><option value="Other Nigerian financial institution — verify license #223">Other Nigerian financial institution — verify license #223</option><option value="Other Nigerian financial institution — verify license #224">Other Nigerian financial institution — verify license #224</option><option value="Other Nigerian financial institution — verify license #225">Other Nigerian financial institution — verify license #225</option><option value="Other Nigerian financial institution — verify license #226">Other Nigerian financial institution — verify license #226</option><option value="Other Nigerian financial institution — verify license #227">Other Nigerian financial institution — verify license #227</option><option value="Other Nigerian financial institution — verify license #228">Other Nigerian financial institution — verify license #228</option><option value="Other Nigerian financial institution — verify license #229">Other Nigerian financial institution — verify license #229</option><option value="Other Nigerian financial institution — verify license #230">Other Nigerian financial institution — verify license #230</option><option value="Other Nigerian financial institution — verify license #231">Other Nigerian financial institution — verify license #231</option><option value="Other Nigerian financial institution — verify license #232">Other Nigerian financial institution — verify license #232</option><option value="Other Nigerian financial institution — verify license #233">Other Nigerian financial institution — verify license #233</option><option value="Other Nigerian financial institution — verify license #234">Other Nigerian financial institution — verify license #234</option><option value="Other Nigerian financial institution — verify license #235">Other Nigerian financial institution — verify license #235</option><option value="Other Nigerian financial institution — verify license #236">Other Nigerian financial institution — verify license #236</option><option value="Other Nigerian financial institution — verify license #237">Other Nigerian financial institution — verify license #237</option><option value="Other Nigerian financial institution — verify license #238">Other Nigerian financial institution — verify license #238</option><option value="Other Nigerian financial institution — verify license #239">Other Nigerian financial institution — verify license #239</option><option value="Other Nigerian financial institution — verify license #240">Other Nigerian financial institution — verify license #240</option><option value="Other Nigerian financial institution — verify license #241">Other Nigerian financial institution — verify license #241</option><option value="Other Nigerian financial institution — verify license #242">Other Nigerian financial institution — verify license #242</option><option value="Other Nigerian financial institution — verify license #243">Other Nigerian financial institution — verify license #243</option><option value="Other Nigerian financial institution — verify license #244">Other Nigerian financial institution — verify license #244</option><option value="Other Nigerian financial institution — verify license #245">Other Nigerian financial institution — verify license #245</option><option value="Other Nigerian financial institution — verify license #246">Other Nigerian financial institution — verify license #246</option><option value="Other Nigerian financial institution — verify license #247">Other Nigerian financial institution — verify license #247</option><option value="Other Nigerian financial institution — verify license #248">Other Nigerian financial institution — verify license #248</option><option value="Other Nigerian financial institution — verify license #249">Other Nigerian financial institution — verify license #249</option><option value="Other Nigerian financial institution — verify license #250">Other Nigerian financial institution — verify license #250</option><option value="Other Nigerian financial institution — verify license #251">Other Nigerian financial institution — verify license #251</option><option value="Other Nigerian financial institution — verify license #252">Other Nigerian financial institution — verify license #252</option><option value="Other Nigerian financial institution — verify license #253">Other Nigerian financial institution — verify license #253</option><option value="Other Nigerian financial institution — verify license #254">Other Nigerian financial institution — verify license #254</option><option value="Other Nigerian financial institution — verify license #255">Other Nigerian financial institution — verify license #255</option><option value="Other Nigerian financial institution — verify license #256">Other Nigerian financial institution — verify license #256</option><option value="Other Nigerian financial institution — verify license #257">Other Nigerian financial institution — verify license #257</option><option value="Other Nigerian financial institution — verify license #258">Other Nigerian financial institution — verify license #258</option><option value="Other Nigerian financial institution — verify license #259">Other Nigerian financial institution — verify license #259</option><option value="Other Nigerian financial institution — verify license #260">Other Nigerian financial institution — verify license #260</option><option value="Other Nigerian financial institution — verify license #261">Other Nigerian financial institution — verify license #261</option><option value="Other Nigerian financial institution — verify license #262">Other Nigerian financial institution — verify license #262</option><option value="Other Nigerian financial institution — verify license #263">Other Nigerian financial institution — verify license #263</option><option value="Other Nigerian financial institution — verify license #264">Other Nigerian financial institution — verify license #264</option><option value="Other Nigerian financial institution — verify license #265">Other Nigerian financial institution — verify license #265</option><option value="Other Nigerian financial institution — verify license #266">Other Nigerian financial institution — verify license #266</option><option value="Other Nigerian financial institution — verify license #267">Other Nigerian financial institution — verify license #267</option><option value="Other Nigerian financial institution — verify license #268">Other Nigerian financial institution — verify license #268</option><option value="Other Nigerian financial institution — verify license #269">Other Nigerian financial institution — verify license #269</option><option value="Other Nigerian financial institution — verify license #270">Other Nigerian financial institution — verify license #270</option><option value="Other Nigerian financial institution — verify license #271">Other Nigerian financial institution — verify license #271</option><option value="Other Nigerian financial institution — verify license #272">Other Nigerian financial institution — verify license #272</option><option value="Other Nigerian financial institution — verify license #273">Other Nigerian financial institution — verify license #273</option><option value="Other Nigerian financial institution — verify license #274">Other Nigerian financial institution — verify license #274</option><option value="Other Nigerian financial institution — verify license #275">Other Nigerian financial institution — verify license #275</option><option value="Other Nigerian financial institution — verify license #276">Other Nigerian financial institution — verify license #276</option><option value="Other Nigerian financial institution — verify license #277">Other Nigerian financial institution — verify license #277</option><option value="Other Nigerian financial institution — verify license #278">Other Nigerian financial institution — verify license #278</option><option value="Other Nigerian financial institution — verify license #279">Other Nigerian financial institution — verify license #279</option><option value="Other Nigerian financial institution — verify license #280">Other Nigerian financial institution — verify license #280</option><option value="Other Nigerian financial institution — verify license #281">Other Nigerian financial institution — verify license #281</option><option value="Other Nigerian financial institution — verify license #282">Other Nigerian financial institution — verify license #282</option><option value="Other Nigerian financial institution — verify license #283">Other Nigerian financial institution — verify license #283</option><option value="Other Nigerian financial institution — verify license #284">Other Nigerian financial institution — verify license #284</option><option value="Other Nigerian financial institution — verify license #285">Other Nigerian financial institution — verify license #285</option><option value="Other Nigerian financial institution — verify license #286">Other Nigerian financial institution — verify license #286</option><option value="Other Nigerian financial institution — verify license #287">Other Nigerian financial institution — verify license #287</option><option value="Other Nigerian financial institution — verify license #288">Other Nigerian financial institution — verify license #288</option><option value="Other Nigerian financial institution — verify license #289">Other Nigerian financial institution — verify license #289</option><option value="Other Nigerian financial institution — verify license #290">Other Nigerian financial institution — verify license #290</option><option value="Other Nigerian financial institution — verify license #291">Other Nigerian financial institution — verify license #291</option><option value="Other Nigerian financial institution — verify license #292">Other Nigerian financial institution — verify license #292</option><option value="Other Nigerian financial institution — verify license #293">Other Nigerian financial institution — verify license #293</option><option value="Other Nigerian financial institution — verify license #294">Other Nigerian financial institution — verify license #294</option><option value="Other Nigerian financial institution — verify license #295">Other Nigerian financial institution — verify license #295</option><option value="Other Nigerian financial institution — verify license #296">Other Nigerian financial institution — verify license #296</option><option value="Other Nigerian financial institution — verify license #297">Other Nigerian financial institution — verify license #297</option><option value="Other Nigerian financial institution — verify license #298">Other Nigerian financial institution — verify license #298</option><option value="Other Nigerian financial institution — verify license #299">Other Nigerian financial institution — verify license #299</option><option value="Other Nigerian financial institution — verify license #300">Other Nigerian financial institution — verify license #300</option><option value="Other Nigerian financial institution — verify license #301">Other Nigerian financial institution — verify license #301</option><option value="Other Nigerian financial institution — verify license #302">Other Nigerian financial institution — verify license #302</option><option value="Other Nigerian financial institution — verify license #303">Other Nigerian financial institution — verify license #303</option><option value="Other Nigerian financial institution — verify license #304">Other Nigerian financial institution — verify license #304</option><option value="Other Nigerian financial institution — verify license #305">Other Nigerian financial institution — verify license #305</option><option value="Other Nigerian financial institution — verify license #306">Other Nigerian financial institution — verify license #306</option><option value="Other Nigerian financial institution — verify license #307">Other Nigerian financial institution — verify license #307</option><option value="Other Nigerian financial institution — verify license #308">Other Nigerian financial institution — verify license #308</option><option value="Other Nigerian financial institution — verify license #309">Other Nigerian financial institution — verify license #309</option><option value="Other Nigerian financial institution — verify license #310">Other Nigerian financial institution — verify license #310</option><option value="Other Nigerian financial institution — verify license #311">Other Nigerian financial institution — verify license #311</option><option value="Other Nigerian financial institution — verify license #312">Other Nigerian financial institution — verify license #312</option><option value="Other Nigerian financial institution — verify license #313">Other Nigerian financial institution — verify license #313</option><option value="Other Nigerian financial institution — verify license #314">Other Nigerian financial institution — verify license #314</option><option value="Other Nigerian financial institution — verify license #315">Other Nigerian financial institution — verify license #315</option><option value="Other Nigerian financial institution — verify license #316">Other Nigerian financial institution — verify license #316</option><option value="Other Nigerian financial institution — verify license #317">Other Nigerian financial institution — verify license #317</option><option value="Other Nigerian financial institution — verify license #318">Other Nigerian financial institution — verify license #318</option><option value="Other Nigerian financial institution — verify license #319">Other Nigerian financial institution — verify license #319</option><option value="Other Nigerian financial institution — verify license #320">Other Nigerian financial institution — verify license #320</option><option value="Other Nigerian financial institution — verify license #321">Other Nigerian financial institution — verify license #321</option><option value="Other Nigerian financial institution — verify license #322">Other Nigerian financial institution — verify license #322</option><option value="Other Nigerian financial institution — verify license #323">Other Nigerian financial institution — verify license #323</option><option value="Other Nigerian financial institution — verify license #324">Other Nigerian financial institution — verify license #324</option><option value="Other Nigerian financial institution — verify license #325">Other Nigerian financial institution — verify license #325</option><option value="Other Nigerian financial institution — verify license #326">Other Nigerian financial institution — verify license #326</option><option value="Other Nigerian financial institution — verify license #327">Other Nigerian financial institution — verify license #327</option><option value="Other Nigerian financial institution — verify license #328">Other Nigerian financial institution — verify license #328</option><option value="Other Nigerian financial institution — verify license #329">Other Nigerian financial institution — verify license #329</option><option value="Other Nigerian financial institution — verify license #330">Other Nigerian financial institution — verify license #330</option><option value="Other Nigerian financial institution — verify license #331">Other Nigerian financial institution — verify license #331</option><option value="Other Nigerian financial institution — verify license #332">Other Nigerian financial institution — verify license #332</option><option value="Other Nigerian financial institution — verify license #333">Other Nigerian financial institution — verify license #333</option><option value="Other Nigerian financial institution — verify license #334">Other Nigerian financial institution — verify license #334</option><option value="Other Nigerian financial institution — verify license #335">Other Nigerian financial institution — verify license #335</option><option value="Other Nigerian financial institution — verify license #336">Other Nigerian financial institution — verify license #336</option><option value="Other Nigerian financial institution — verify license #337">Other Nigerian financial institution — verify license #337</option><option value="Other Nigerian financial institution — verify license #338">Other Nigerian financial institution — verify license #338</option><option value="Other Nigerian financial institution — verify license #339">Other Nigerian financial institution — verify license #339</option><option value="Other Nigerian financial institution — verify license #340">Other Nigerian financial institution — verify license #340</option><option value="Other Nigerian financial institution — verify license #341">Other Nigerian financial institution — verify license #341</option><option value="Other Nigerian financial institution — verify license #342">Other Nigerian financial institution — verify license #342</option><option value="Other Nigerian financial institution — verify license #343">Other Nigerian financial institution — verify license #343</option><option value="Other Nigerian financial institution — verify license #344">Other Nigerian financial institution — verify license #344</option><option value="Other Nigerian financial institution — verify license #345">Other Nigerian financial institution — verify license #345</option><option value="Other Nigerian financial institution — verify license #346">Other Nigerian financial institution — verify license #346</option><option value="Other Nigerian financial institution — verify license #347">Other Nigerian financial institution — verify license #347</option><option value="Other Nigerian financial institution — verify license #348">Other Nigerian financial institution — verify license #348</option><option value="Other Nigerian financial institution — verify license #349">Other Nigerian financial institution — verify license #349</option><option value="Other Nigerian financial institution — verify license #350">Other Nigerian financial institution — verify license #350</option><option value="Other Nigerian financial institution — verify license #351">Other Nigerian financial institution — verify license #351</option><option value="Other Nigerian financial institution — verify license #352">Other Nigerian financial institution — verify license #352</option><option value="Other Nigerian financial institution — verify license #353">Other Nigerian financial institution — verify license #353</option><option value="Other Nigerian financial institution — verify license #354">Other Nigerian financial institution — verify license #354</option><option value="Other Nigerian financial institution — verify license #355">Other Nigerian financial institution — verify license #355</option><option value="Other Nigerian financial institution — verify license #356">Other Nigerian financial institution — verify license #356</option><option value="Other Nigerian financial institution — verify license #357">Other Nigerian financial institution — verify license #357</option><option value="Other Nigerian financial institution — verify license #358">Other Nigerian financial institution — verify license #358</option><option value="Other Nigerian financial institution — verify license #359">Other Nigerian financial institution — verify license #359</option><option value="Other Nigerian financial institution — verify license #360">Other Nigerian financial institution — verify license #360</option><option value="Other Nigerian financial institution — verify license #361">Other Nigerian financial institution — verify license #361</option><option value="Other Nigerian financial institution — verify license #362">Other Nigerian financial institution — verify license #362</option><option value="Other Nigerian financial institution — verify license #363">Other Nigerian financial institution — verify license #363</option><option value="Other Nigerian financial institution — verify license #364">Other Nigerian financial institution — verify license #364</option><option value="Other Nigerian financial institution — verify license #365">Other Nigerian financial institution — verify license #365</option><option value="Other Nigerian financial institution — verify license #366">Other Nigerian financial institution — verify license #366</option><option value="Other Nigerian financial institution — verify license #367">Other Nigerian financial institution — verify license #367</option><option value="Other Nigerian financial institution — verify license #368">Other Nigerian financial institution — verify license #368</option><option value="Other Nigerian financial institution — verify license #369">Other Nigerian financial institution — verify license #369</option><option value="Other Nigerian financial institution — verify license #370">Other Nigerian financial institution — verify license #370</option><option value="Other Nigerian financial institution — verify license #371">Other Nigerian financial institution — verify license #371</option><option value="Other Nigerian financial institution — verify license #372">Other Nigerian financial institution — verify license #372</option><option value="Other Nigerian financial institution — verify license #373">Other Nigerian financial institution — verify license #373</option><option value="Other Nigerian financial institution — verify license #374">Other Nigerian financial institution — verify license #374</option><option value="Other Nigerian financial institution — verify license #375">Other Nigerian financial institution — verify license #375</option><option value="Other Nigerian financial institution — verify license #376">Other Nigerian financial institution — verify license #376</option><option value="Other Nigerian financial institution — verify license #377">Other Nigerian financial institution — verify license #377</option><option value="Other Nigerian financial institution — verify license #378">Other Nigerian financial institution — verify license #378</option><option value="Other Nigerian financial institution — verify license #379">Other Nigerian financial institution — verify license #379</option><option value="Other Nigerian financial institution — verify license #380">Other Nigerian financial institution — verify license #380</option><option value="Other Nigerian financial institution — verify license #381">Other Nigerian financial institution — verify license #381</option><option value="Other Nigerian financial institution — verify license #382">Other Nigerian financial institution — verify license #382</option><option value="Other Nigerian financial institution — verify license #383">Other Nigerian financial institution — verify license #383</option><option value="Other Nigerian financial institution — verify license #384">Other Nigerian financial institution — verify license #384</option><option value="Other Nigerian financial institution — verify license #385">Other Nigerian financial institution — verify license #385</option><option value="Other Nigerian financial institution — verify license #386">Other Nigerian financial institution — verify license #386</option><option value="Other Nigerian financial institution — verify license #387">Other Nigerian financial institution — verify license #387</option><option value="Other Nigerian financial institution — verify license #388">Other Nigerian financial institution — verify license #388</option><option value="Other Nigerian financial institution — verify license #389">Other Nigerian financial institution — verify license #389</option><option value="Other Nigerian financial institution — verify license #390">Other Nigerian financial institution — verify license #390</option><option value="Other Nigerian financial institution — verify license #391">Other Nigerian financial institution — verify license #391</option><option value="Other Nigerian financial institution — verify license #392">Other Nigerian financial institution — verify license #392</option><option value="Other Nigerian financial institution — verify license #393">Other Nigerian financial institution — verify license #393</option><option value="Other Nigerian financial institution — verify license #394">Other Nigerian financial institution — verify license #394</option><option value="Other Nigerian financial institution — verify license #395">Other Nigerian financial institution — verify license #395</option><option value="Other Nigerian financial institution — verify license #396">Other Nigerian financial institution — verify license #396</option><option value="Other Nigerian financial institution — verify license #397">Other Nigerian financial institution — verify license #397</option><option value="Other Nigerian financial institution — verify license #398">Other Nigerian financial institution — verify license #398</option><option value="Other Nigerian financial institution — verify license #399">Other Nigerian financial institution — verify license #399</option><option value="Other Nigerian financial institution — verify license #400">Other Nigerian financial institution — verify license #400</option><option value="Other Nigerian financial institution — verify license #401">Other Nigerian financial institution — verify license #401</option><option value="Other Nigerian financial institution — verify license #402">Other Nigerian financial institution — verify license #402</option><option value="Other Nigerian financial institution — verify license #403">Other Nigerian financial institution — verify license #403</option><option value="Other Nigerian financial institution — verify license #404">Other Nigerian financial institution — verify license #404</option><option value="Other Nigerian financial institution — verify license #405">Other Nigerian financial institution — verify license #405</option><option value="Other Nigerian financial institution — verify license #406">Other Nigerian financial institution — verify license #406</option><option value="Other Nigerian financial institution — verify license #407">Other Nigerian financial institution — verify license #407</option><option value="Other Nigerian financial institution — verify license #408">Other Nigerian financial institution — verify license #408</option><option value="Other Nigerian financial institution — verify license #409">Other Nigerian financial institution — verify license #409</option><option value="Other Nigerian financial institution — verify license #410">Other Nigerian financial institution — verify license #410</option><option value="Other Nigerian financial institution — verify license #411">Other Nigerian financial institution — verify license #411</option><option value="Other Nigerian financial institution — verify license #412">Other Nigerian financial institution — verify license #412</option><option value="Other Nigerian financial institution — verify license #413">Other Nigerian financial institution — verify license #413</option><option value="Other Nigerian financial institution — verify license #414">Other Nigerian financial institution — verify license #414</option><option value="Other Nigerian financial institution — verify license #415">Other Nigerian financial institution — verify license #415</option><option value="Other Nigerian financial institution — verify license #416">Other Nigerian financial institution — verify license #416</option><option value="Other Nigerian financial institution — verify license #417">Other Nigerian financial institution — verify license #417</option><option value="Other Nigerian financial institution — verify license #418">Other Nigerian financial institution — verify license #418</option><option value="Other Nigerian financial institution — verify license #419">Other Nigerian financial institution — verify license #419</option><option value="Other Nigerian financial institution — verify license #420">Other Nigerian financial institution — verify license #420</option><option value="Other Nigerian financial institution — verify license #421">Other Nigerian financial institution — verify license #421</option><option value="Other Nigerian financial institution — verify license #422">Other Nigerian financial institution — verify license #422</option><option value="Other Nigerian financial institution — verify license #423">Other Nigerian financial institution — verify license #423</option><option value="Other Nigerian financial institution — verify license #424">Other Nigerian financial institution — verify license #424</option><option value="Other Nigerian financial institution — verify license #425">Other Nigerian financial institution — verify license #425</option><option value="Other Nigerian financial institution — verify license #426">Other Nigerian financial institution — verify license #426</option><option value="Other Nigerian financial institution — verify license #427">Other Nigerian financial institution — verify license #427</option><option value="Other Nigerian financial institution — verify license #428">Other Nigerian financial institution — verify license #428</option><option value="Other Nigerian financial institution — verify license #429">Other Nigerian financial institution — verify license #429</option><option value="Other Nigerian financial institution — verify license #430">Other Nigerian financial institution — verify license #430</option><option value="Other Nigerian financial institution — verify license #431">Other Nigerian financial institution — verify license #431</option><option value="Other Nigerian financial institution — verify license #432">Other Nigerian financial institution — verify license #432</option><option value="Other Nigerian financial institution — verify license #433">Other Nigerian financial institution — verify license #433</option><option value="Other Nigerian financial institution — verify license #434">Other Nigerian financial institution — verify license #434</option><option value="Other Nigerian financial institution — verify license #435">Other Nigerian financial institution — verify license #435</option><option value="Other Nigerian financial institution — verify license #436">Other Nigerian financial institution — verify license #436</option><option value="Other Nigerian financial institution — verify license #437">Other Nigerian financial institution — verify license #437</option><option value="Other Nigerian financial institution — verify license #438">Other Nigerian financial institution — verify license #438</option><option value="Other Nigerian financial institution — verify license #439">Other Nigerian financial institution — verify license #439</option><option value="Other Nigerian financial institution — verify license #440">Other Nigerian financial institution — verify license #440</option><option value="Other Nigerian financial institution — verify license #441">Other Nigerian financial institution — verify license #441</option><option value="Other Nigerian financial institution — verify license #442">Other Nigerian financial institution — verify license #442</option><option value="Other Nigerian financial institution — verify license #443">Other Nigerian financial institution — verify license #443</option><option value="Other Nigerian financial institution — verify license #444">Other Nigerian financial institution — verify license #444</option><option value="Other Nigerian financial institution — verify license #445">Other Nigerian financial institution — verify license #445</option><option value="Other Nigerian financial institution — verify license #446">Other Nigerian financial institution — verify license #446</option><option value="Other Nigerian financial institution — verify license #447">Other Nigerian financial institution — verify license #447</option><option value="Other Nigerian financial institution — verify license #448">Other Nigerian financial institution — verify license #448</option><option value="Other Nigerian financial institution — verify license #449">Other Nigerian financial institution — verify license #449</option><option value="Other Nigerian financial institution — verify license #450">Other Nigerian financial institution — verify license #450</option><option value="Other Nigerian financial institution — verify license #451">Other Nigerian financial institution — verify license #451</option><option value="Other Nigerian financial institution — verify license #452">Other Nigerian financial institution — verify license #452</option><option value="Other Nigerian financial institution — verify license #453">Other Nigerian financial institution — verify license #453</option><option value="Other Nigerian financial institution — verify license #454">Other Nigerian financial institution — verify license #454</option><option value="Other Nigerian financial institution — verify license #455">Other Nigerian financial institution — verify license #455</option><option value="Other Nigerian financial institution — verify license #456">Other Nigerian financial institution — verify license #456</option><option value="Other Nigerian financial institution — verify license #457">Other Nigerian financial institution — verify license #457</option><option value="Other Nigerian financial institution — verify license #458">Other Nigerian financial institution — verify license #458</option><option value="Other Nigerian financial institution — verify license #459">Other Nigerian financial institution — verify license #459</option><option value="Other Nigerian financial institution — verify license #460">Other Nigerian financial institution — verify license #460</option><option value="Other Nigerian financial institution — verify license #461">Other Nigerian financial institution — verify license #461</option><option value="Other Nigerian financial institution — verify license #462">Other Nigerian financial institution — verify license #462</option><option value="Other Nigerian financial institution — verify license #463">Other Nigerian financial institution — verify license #463</option><option value="Other Nigerian financial institution — verify license #464">Other Nigerian financial institution — verify license #464</option><option value="Other Nigerian financial institution — verify license #465">Other Nigerian financial institution — verify license #465</option><option value="Other Nigerian financial institution — verify license #466">Other Nigerian financial institution — verify license #466</option><option value="Other Nigerian financial institution — verify license #467">Other Nigerian financial institution — verify license #467</option><option value="Other Nigerian financial institution — verify license #468">Other Nigerian financial institution — verify license #468</option><option value="Other Nigerian financial institution — verify license #469">Other Nigerian financial institution — verify license #469</option><option value="Other Nigerian financial institution — verify license #470">Other Nigerian financial institution — verify license #470</option><option value="Other Nigerian financial institution — verify license #471">Other Nigerian financial institution — verify license #471</option><option value="Other Nigerian financial institution — verify license #472">Other Nigerian financial institution — verify license #472</option><option value="Other Nigerian financial institution — verify license #473">Other Nigerian financial institution — verify license #473</option><option value="Other Nigerian financial institution — verify license #474">Other Nigerian financial institution — verify license #474</option><option value="Other Nigerian financial institution — verify license #475">Other Nigerian financial institution — verify license #475</option><option value="Other Nigerian financial institution — verify license #476">Other Nigerian financial institution — verify license #476</option><option value="Other Nigerian financial institution — verify license #477">Other Nigerian financial institution — verify license #477</option><option value="Other Nigerian financial institution — verify license #478">Other Nigerian financial institution — verify license #478</option><option value="Other Nigerian financial institution — verify license #479">Other Nigerian financial institution — verify license #479</option><option value="Other Nigerian financial institution — verify license #480">Other Nigerian financial institution — verify license #480</option><option value="Other Nigerian financial institution — verify license #481">Other Nigerian financial institution — verify license #481</option><option value="Other Nigerian financial institution — verify license #482">Other Nigerian financial institution — verify license #482</option><option value="Other Nigerian financial institution — verify license #483">Other Nigerian financial institution — verify license #483</option><option value="Other Nigerian financial institution — verify license #484">Other Nigerian financial institution — verify license #484</option><option value="Other Nigerian financial institution — verify license #485">Other Nigerian financial institution — verify license #485</option><option value="Other Nigerian financial institution — verify license #486">Other Nigerian financial institution — verify license #486</option><option value="Other Nigerian financial institution — verify license #487">Other Nigerian financial institution — verify license #487</option><option value="Other Nigerian financial institution — verify license #488">Other Nigerian financial institution — verify license #488</option><option value="Other Nigerian financial institution — verify license #489">Other Nigerian financial institution — verify license #489</option><option value="Other Nigerian financial institution — verify license #490">Other Nigerian financial institution — verify license #490</option><option value="Other Nigerian financial institution — verify license #491">Other Nigerian financial institution — verify license #491</option><option value="Other Nigerian financial institution — verify license #492">Other Nigerian financial institution — verify license #492</option><option value="Other Nigerian financial institution — verify license #493">Other Nigerian financial institution — verify license #493</option><option value="Other Nigerian financial institution — verify license #494">Other Nigerian financial institution — verify license #494</option><option value="Other Nigerian financial institution — verify license #495">Other Nigerian financial institution — verify license #495</option><option value="Other Nigerian financial institution — verify license #496">Other Nigerian financial institution — verify license #496</option><option value="Other Nigerian financial institution — verify license #497">Other Nigerian financial institution — verify license #497</option><option value="Other Nigerian financial institution — verify license #498">Other Nigerian financial institution — verify license #498</option><option value="Other Nigerian financial institution — verify license #499">Other Nigerian financial institution — verify license #499</option><option value="Other Nigerian financial institution — verify license #500">Other Nigerian financial institution — verify license #500</option></select>
+      <label>Account Number</label>
+      <input type="text" id="userBankAcct" placeholder="Account number" />
+      <label>Account Name</label>
+      <input type="text" id="userBankHolder" placeholder="Name on account" />
+      <div class="modal-actions">
+        <button class="btn btn-dark" onclick="closeModals()">Cancel</button>
+        <button class="btn btn-gold" onclick="saveUserBank()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+  <script>
+    let currentUser = null, settings = {}, products = [], fullData = null, slide = 0, carTimer = null;
+    let liveSyncFingerprint = "";
+    let liveSyncStarted = false;
+
+    function hourGreeting() {
+      const h = new Date().getHours();
+      if (h < 12) return "Good morning,";
+      if (h < 17) return "Good afternoon,";
+      return "Good evening,";
+    }
+    function showPage(name) {
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      const el = document.getElementById("page-" + name);
+      if (el) el.classList.add("active");
+      window.scrollTo(0, 0);
+    }
+    function goSlide(i) {
+      slide = i;
+      const track = document.getElementById("carouselTrack");
+      if (track) track.style.transform = "translateX(-" + (slide * 33.333) + "%)";
+      document.querySelectorAll("#carouselDots span").forEach((d, idx) => d.classList.toggle("active", idx === slide));
+      clearInterval(carTimer);
+      carTimer = setInterval(function() { goSlide((slide + 1) % 3); }, 4500);
+    }
+
+    document.addEventListener("DOMContentLoaded", async function() {
+      currentUser = getLoggedUser();
+      if (!currentUser) { location.href = "login.html"; return; }
+      try {
+        await loadAll();
+        startDashboardLiveSync();
+        goSlide(0);
+      } catch (e) {
+        console.error(e);
+        clearLoggedUser();
+        location.href = "login.html";
+      }
+    });
+
+    async function loadAll() {
+      fullData = await fetchBin();
+      const fresh = (fullData.users || []).find(function(u) { return u.email === currentUser.email; });
+      if (!fresh) { clearLoggedUser(); location.href = "login.html"; return; }
+      currentUser = fresh;
+      setLoggedUser(currentUser);
+      settings = fullData.settings || {};
+      products = fullData.products || [];
+      renderAll();
+      liveSyncFingerprint = makeLiveSyncFingerprint(fullData, currentUser);
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      var liveBadge = document.getElementById("liveSyncBadge");
+      if (liveBadge) liveBadge.style.display = "block";
+    }
+
+    function makeLiveSyncFingerprint(data, user) {
+      return JSON.stringify({
+        user: user || {},
+        settings: data && data.settings ? data.settings : {},
+        products: data && data.products ? data.products : [],
+        withdrawals: (data && data.withdrawals ? data.withdrawals : []).filter(function(w) {
+          return w && (w.email === (user && user.email) || w.user === (user && user.email));
+        })
+      });
+    }
+
+    function startDashboardLiveSync() {
+      if (liveSyncStarted) return;
+      liveSyncStarted = true;
+      const handleDashboardSync = async function(latest) {
+        if (!currentUser || !latest) return;
+        const freshUser = (latest.users || []).find(function(u) { return u.email === currentUser.email; });
+        if (!freshUser) return;
+
+        const fingerprint = makeLiveSyncFingerprint(latest, freshUser);
+        if (fingerprint === liveSyncFingerprint) return;
+
+        fullData = latest;
+        currentUser = freshUser;
+        settings = latest.settings || {};
+        products = latest.products || [];
+        setLoggedUser(currentUser);
+        liveSyncFingerprint = fingerprint;
+        renderAll();
+
+        // Re-bind modal data/buttons immediately if the admin changed it.
+        if (document.getElementById("depositModal")?.classList.contains("show")) {
+          openDeposit();
+        }
+        showToast("Live update received", 1600);
+      };
+
+      startFrontendSync(handleDashboardSync, 8000);
+    }
+
+    function renderAll() {
+      var name = currentUser.fullName || "User";
+      var first = name.split(" ")[0];
+      var initial = (first[0] || "U").toUpperCase();
+      document.getElementById("greetLabel").textContent = hourGreeting();
+      document.getElementById("greetName").textContent = first;
+      document.getElementById("avatar").textContent = initial;
+
+      var bal = Number(currentUser.balance || 0);
+      document.getElementById("balanceAmount").textContent = "₦" + bal.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      var refs = Number(currentUser.referrals || currentUser.totalReferrals || 0);
+      var earned = Number(currentUser.totalEarned || currentUser.balance || 0);
+      document.getElementById("totalReferrals").textContent = refs;
+      document.getElementById("totalEarned").textContent = "₦" + earned.toLocaleString();
+
+      var txs = currentUser.transactions || [];
+      var txBox = document.getElementById("txList");
+      if (!txs.length) {
+        if (bal > 0) {
+          txBox.innerHTML = '<div class="tx-item"><div><div class="tx-title">Welcome bonus</div><div class="tx-date">' +
+            (currentUser.joined ? new Date(currentUser.joined).toLocaleDateString() : "") +
+            '</div></div><div class="tx-amount plus">+₦' + bal.toLocaleString() + "</div></div>";
+        } else {
+          txBox.innerHTML = '<div class="empty">No transactions yet</div>';
+        }
+      } else {
+        txBox.innerHTML = txs.slice().reverse().slice(0, 10).map(function(t) {
+          var amt = Number(t.amount);
+          return '<div class="tx-item"><div><div class="tx-title">' + (t.memo || t.title || t.type || "Transaction") +
+            '</div><div class="tx-date">' + (t.date ? new Date(t.date).toLocaleDateString() : "") +
+            '</div></div><div class="tx-amount ' + (amt >= 0 ? "plus" : "minus") + '">' +
+            (amt >= 0 ? "+" : "") + "₦" + Math.abs(amt).toLocaleString() + "</div></div>";
+        }).join("");
+      }
+
+      var pBox = document.getElementById("productsList");
+      if (!products.length) {
+        pBox.innerHTML = '<div class="empty">No packages available</div>';
+      } else {
+        pBox.innerHTML = products.map(function(p) {
+          return '<div class="product-card"><div class="product-top"><span class="product-name">' + p.name +
+            '</span><span>' + (p.badge || "") + '</span></div><div class="product-desc">' + (p.desc || "") +
+            '</div><div class="product-meta"><span>Invest: <strong>₦' + Number(p.price).toLocaleString() +
+            '</strong></span><span>Profit: <strong>₦' + Number(p.profit).toLocaleString() +
+            '</strong></span></div><button class="btn btn-gold" style="width:100%;" onclick="investProduct(\'' +
+            p.id + "')\">Invest Now</button></div>";
+        }).join("");
+      }
+
+      var sBox = document.getElementById("supportLinks");
+      var sHtml = "";
+      if (settings.whatsapp) sHtml += '<a class="link-card" href="' + settings.whatsapp + '" target="_blank" rel="noopener"><div class="link-icon">📱</div><div><strong>WhatsApp Support</strong><span>Chat with us</span></div></a>';
+      if (settings.telegram) sHtml += '<a class="link-card" href="' + settings.telegram + '" target="_blank" rel="noopener"><div class="link-icon">✈️</div><div><strong>Telegram</strong><span>Message support</span></div></a>';
+      if (settings.telegramChannel) sHtml += '<a class="link-card" href="' + settings.telegramChannel + '" target="_blank" rel="noopener"><div class="link-icon">📢</div><div><strong>Telegram Channel</strong><span>News & updates</span></div></a>';
+      sBox.innerHTML = sHtml || '<div class="empty">Support links will appear when set by admin</div>';
+
+      document.getElementById("platBank").textContent = settings.bankName || "—";
+      document.getElementById("platName").textContent = settings.accountName || "—";
+      document.getElementById("platAcct").textContent = settings.bankAccount || "—";
+
+      var code = currentUser.referralCode || currentUser.id || "—";
+      document.getElementById("inviteCode").textContent = code;
+      document.getElementById("inviteRefs").textContent = refs;
+      document.getElementById("inviteEarn").textContent = "₦" + Number(currentUser.inviteEarnings || 0).toLocaleString();
+
+      document.getElementById("profName").textContent = name;
+      document.getElementById("profEmail").textContent = currentUser.email || "—";
+      document.getElementById("profJoined").textContent = currentUser.joined ? new Date(currentUser.joined).toLocaleDateString() : "—";
+      document.getElementById("profStatus").textContent = currentUser.status || "Active";
+      document.getElementById("profCode").textContent = code;
+      document.getElementById("profBank").textContent = currentUser.bankName || "Not set";
+      document.getElementById("profAcct").textContent = currentUser.bankAccount || "Not set";
+    }
+
+    function openWithdraw() {
+      document.getElementById("wdAmount").value = "";
+      document.getElementById("wdAccount").value = currentUser.bankAccount
+        ? ((currentUser.bankName || "") + " " + currentUser.bankAccount).trim() : "";
+      document.getElementById("withdrawModal").classList.add("show");
+    }
+    function openDeposit() {
+      document.getElementById("depositDetails").innerHTML =
+        '<div class="info-row"><span class="info-label">Bank</span><span class="info-value">' + (settings.bankName || "—") +
+        '</span></div><div class="info-row"><span class="info-label">Account Name</span><span class="info-value">' +
+        (settings.accountName || "—") + '</span></div><div class="info-row"><span class="info-label">Account Number</span><span class="info-value">' +
+        (settings.bankAccount || "—") + "</span></div>";
+      document.getElementById("contactSupportBtn").onclick = function() {
+        if (settings.whatsapp) window.open(settings.whatsapp, "_blank");
+        else showToast("WhatsApp not set by admin");
+      };
+      document.getElementById("depositModal").classList.add("show");
+    }
+    function openAddBank() {
+      document.getElementById("userBankName").value = currentUser.bankName || "";
+      document.getElementById("userBankAcct").value = currentUser.bankAccount || "";
+      document.getElementById("userBankHolder").value = currentUser.bankHolder || currentUser.fullName || "";
+      document.getElementById("bankModal").classList.add("show");
+    }
+    function closeModals() {
+      document.querySelectorAll(".modal-bg").forEach(function(m) { m.classList.remove("show"); });
+    }
+
+    async function submitWithdraw() {
+      var amount = Number(document.getElementById("wdAmount").value);
+      var account = document.getElementById("wdAccount").value.trim();
+      if (!amount || amount < 50000) { showToast("Amount not up to the withdrawal amount. Minimum withdrawal is ₦50,000."); return; }
+      if (!account) { showToast("Enter bank details"); return; }
+      if (amount > Number(currentUser.balance || 0)) { showToast("Insufficient balance"); return; }
+      try {
+        stopFrontendSync();
+        fullData.withdrawals = fullData.withdrawals || [];
+        fullData.withdrawals.push({
+          id: "WD" + Date.now(), email: currentUser.email, fullName: currentUser.fullName,
+          amount: amount, account: account, status: "pending", date: new Date().toISOString()
+        });
+        var idx = fullData.users.findIndex(function(u) { return u.email === currentUser.email; });
+        if (idx >= 0) {
+          fullData.users[idx].transactions = fullData.users[idx].transactions || [];
+          fullData.users[idx].transactions.push({
+            title: "Withdrawal request", amount: -amount, date: new Date().toISOString(), type: "withdrawal"
+          });
+        }
+        await saveBin(fullData);
+        closeModals();
+        showToast("Withdrawal request submitted");
+        await loadAll();
+        startDashboardLiveSync();
+      } catch (e) {
+        startDashboardLiveSync();
+        showToast("Failed. Try again.");
+        console.error(e);
+      }
+    }
+
+    async function saveUserBank() {
+      var bankName = document.getElementById("userBankName").value.trim();
+      var bankAccount = document.getElementById("userBankAcct").value.trim();
+      var bankHolder = document.getElementById("userBankHolder").value.trim();
+      if (!bankName || !bankAccount) { showToast("Fill bank name and account number"); return; }
+      try {
+        stopFrontendSync();
+        var idx = fullData.users.findIndex(function(u) { return u.email === currentUser.email; });
+        if (idx < 0) throw new Error("User not found");
+        fullData.users[idx].bankName = bankName;
+        fullData.users[idx].bankAccount = bankAccount;
+        fullData.users[idx].bankHolder = bankHolder;
+        await saveBin(fullData);
+        currentUser = fullData.users[idx];
+        setLoggedUser(currentUser);
+        closeModals();
+        showToast("Bank details saved");
+        renderAll();
+        liveSyncFingerprint = makeLiveSyncFingerprint(fullData, currentUser);
+        startDashboardLiveSync();
+      } catch (e) {
+        startDashboardLiveSync();
+        showToast("Failed to save");
+        console.error(e);
+      }
+    }
+
+    function investProduct(id) {
+      var p = products.find(function(x) { return x.id === id; });
+      if (!p) return;
+      showToast("Deposit ₦" + Number(p.price).toLocaleString() + " to invest in " + p.name);
+      openDeposit();
+    }
+    function copyCode() {
+      var code = document.getElementById("inviteCode").textContent;
+      navigator.clipboard.writeText(code).then(function() { showToast("Code copied!"); }).catch(function() { showToast("Copy failed"); });
+    }
+    function logout() {
+      clearLoggedUser();
+      location.href = "login.html";
+    }
+  
+    const demoNames=['Amina Yusuf','Chinedu Okafor','Fatima Bello','David Adeyemi','Blessing Eze','Ibrahim Musa','Grace Nwosu','Samuel Johnson','Maryam Abdullahi','Daniel Okoro','Esther Williams','Tunde Adebayo','Hauwa Ibrahim','Victor Chukwu','Joy Peter'];let demoUsed=[];function rotateDemoActivity(){let pool=demoNames.filter(n=>!demoUsed.includes(n));if(!pool.length){demoUsed=[];pool=demoNames.slice()}const name=pool[Math.floor(Math.random()*pool.length)];demoUsed.push(name);const withdrawal=Math.random()<.6;const amount=withdrawal?(Math.floor(Math.random()*80)+10)*50000:2000;document.getElementById('communityAvatar').textContent=name.split(' ').map(x=>x[0]).join('').slice(0,2);document.getElementById('communityName').textContent=name;document.getElementById('communityType').textContent=withdrawal?'Withdrawal activity':'Referral activity';document.getElementById('communityAmount').textContent=(withdrawal?'₦'+amount.toLocaleString():'+₦2,000')}function scheduleDemo(){setTimeout(()=>{rotateDemoActivity();scheduleDemo()},(Math.floor(Math.random()*3)+1)*60000)}setTimeout(scheduleDemo,2500);
+</script>
+</body>
+</html>
